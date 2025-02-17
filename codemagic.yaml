@@ -5,7 +5,7 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       groups:
-        - google_play
+        - google_play  # Ensure this group has the necessary Google Play credentials
       vars:
         PACKAGE_NAME: "com.sinmichael.sample.reactnative"
     scripts:
@@ -15,15 +15,18 @@ workflows:
       - name: Install npm dependencies
         script: | 
           npm install
-      - name: Build Android release
+      - name: Increment Version Code
         script: | 
           LATEST_GOOGLE_PLAY_BUILD_NUMBER=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME")
-          if [ -z $LATEST_GOOGLE_PLAY_BUILD_NUMBER ]; then
-              # fallback in case no build number was found from google play. Alternatively, you can `exit 1` to fail the build
+          if [ -z "$LATEST_GOOGLE_PLAY_BUILD_NUMBER" ]; then
+              # Fallback if no build number found on Google Play
               UPDATED_BUILD_NUMBER=$BUILD_NUMBER
           else
               UPDATED_BUILD_NUMBER=$(($LATEST_GOOGLE_PLAY_BUILD_NUMBER + 1))
           fi
+          echo "Using version code: $UPDATED_BUILD_NUMBER"
+      - name: Build Android release
+        script: | 
           cd android
           ./gradlew bundleRelease \
             -PversionCode=$UPDATED_BUILD_NUMBER \
